@@ -28,6 +28,7 @@ public class EmailService {
     MimeMessage mimeMessage = javaMailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
+    helper.setFrom(fromEmail);
     helper.setTo(toEmail);
     helper.setSubject("Movimiento detectado");
 
