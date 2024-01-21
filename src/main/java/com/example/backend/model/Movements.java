@@ -1,15 +1,10 @@
 package com.example.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,5 +18,9 @@ public class Movements {
   private Integer id;
   private String dateTime;
   private String room;
+  private String id_user;
+  @Lob
+  @Column(columnDefinition = "MEDIUMBLOB")
+  private byte[] image;
 
 }

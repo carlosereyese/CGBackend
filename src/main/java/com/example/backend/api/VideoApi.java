@@ -10,9 +10,6 @@ import java.io.IOException;
 
 public interface VideoApi {
 
-  @GetMapping(value = "/video/getVideo")
-  ResponseEntity<InputStreamResource> getVideo(@RequestParam String title) throws IOException;
-
   @GetMapping(value = "/video/stream", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   ResponseEntity<InputStreamResource> streamVideo(@RequestParam String title) throws IOException;
 }

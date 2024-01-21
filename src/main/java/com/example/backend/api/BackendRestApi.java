@@ -1,6 +1,7 @@
 package com.example.backend.api;
 
 import com.example.backend.model.Movements;
+import com.example.backend.model.Spaces;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -14,4 +15,9 @@ public interface BackendRestApi {
   @PostMapping(path="/movements/insertMovement")
   Movements insertMovement(Movements movement);
 
+  @GetMapping(path="/spaces/getAllSpaces")
+  List<Spaces> getAllSpaces();
+
+  @PostMapping(path="/spaces/insertSpaces")
+  Spaces insertSpaces(Spaces space);
 }
