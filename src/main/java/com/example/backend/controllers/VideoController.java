@@ -163,27 +163,36 @@ public class VideoController implements VideoApi {
     return rect_array;
   }
 
-  private void instertMovementSendEmail(Mat mat, String title) throws MessagingException, IOException {
+  private void instertMovementSendEmail(Mat mat, String title) {
     MatOfByte matOfByte = new MatOfByte();
     Imgcodecs.imencode(".jpg", mat, matOfByte);
     byte[] image = matOfByte.toArray();
-
-    Movements movements = new Movements();
-    movements.setRoom(title);
-    movements.setId_user("1");
-    movements.setImage(image);
     LocalDateTime currentDateTime = LocalDateTime.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     String formattedDateTime = currentDateTime.format(formatter);
-    movements.setDateTime(formattedDateTime);
-    backendService.insert(movements);
-    System.out.println("Movement inserted in bd.");
 
-    EmailRequest email = new EmailRequest();
-    email.setToEmail("carlosereyese@gmail.com");
-    email.setMovimiento(movements.getRoom() + " a las: " + movements.getDateTime());
-    email.setBase64(Base64.getEncoder().encodeToString(image));
-    //emailService.sendEmail(email);
-    System.out.println("Email sent.");
+    try {
+      Movements movements = new Movements();
+      movements.setRoom(title);
+      movements.setId_user("1");
+      movements.setImage(image);
+      movements.setDateTime(formattedDateTime);
+      backendService.insert(movements);
+      System.out.println("Movement inserted in bd.");
+    }
+    catch (Exception e) {
+      System.out.println("Failed to insert movement in bd.");
+    }
+
+    try {
+      EmailRequest email = new EmailRequest();
+      email.setToEmail("carlosereyese@gmail.com");
+      email.setMovimiento(title + " a las: " + formattedDateTime);
+      email.setBase64(Base64.getEncoder().encodeToString(image));
+      emailService.sendEmail(email);
+      System.out.println("Email sent.");
+    } catch (Exception e) {
+      System.out.println("Failed to send email.");
+    }
   }
 }
