@@ -19,7 +19,7 @@ public class EmailController implements EmailApi {
 
   @Override
   public void sendEmail(EmailRequest emailRequest) throws MessagingException, IOException {
-    emailService.sendEmail(emailRequest.getToEmail(), emailRequest.getMovimiento(), emailRequest.getBase64());
+    emailService.sendEmail(emailRequest);
   }
 
 }

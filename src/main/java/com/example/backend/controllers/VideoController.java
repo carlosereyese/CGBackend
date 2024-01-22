@@ -7,6 +7,7 @@ import com.example.backend.services.BackendService;
 import com.example.backend.services.EmailService;
 import com.example.backend.services.StreamingService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.mail.MessagingException;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.opencv.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ public class VideoController implements VideoApi {
 
     try {
       detectMotion(title, videoStream);
-    } catch (IOException e) {
+    } catch (IOException | MessagingException e) {
       throw new RuntimeException(e);
     }
 
@@ -64,7 +65,7 @@ public class VideoController implements VideoApi {
   }
 
 
-  public void detectMotion(String title, InputStream videoStream) throws IOException {
+  public void detectMotion(String title, InputStream videoStream) throws IOException, MessagingException {
 
     File tempVideoFile = File.createTempFile("tempVideo", ".mp4");
     try (OutputStream out = new FileOutputStream(tempVideoFile)) {
@@ -155,7 +156,7 @@ public class VideoController implements VideoApi {
     return rect_array;
   }
 
-  private void instertMovementSendEmail(Mat mat, String title) {
+  private void instertMovementSendEmail(Mat mat, String title) throws MessagingException, IOException {
     MatOfByte matOfByte = new MatOfByte();
     Imgcodecs.imencode(".jpg", mat, matOfByte);
     byte[] image = matOfByte.toArray();
@@ -174,5 +175,6 @@ public class VideoController implements VideoApi {
     email.setToEmail("carlosereyese@gmail.com");
     email.setMovimiento("movimiento");
     email.setBase64(Base64.getEncoder().encodeToString(image));
+    emailService.sendEmail(email);
   }
 }

@@ -1,5 +1,6 @@
 package com.example.backend.services;
 
+import com.example.backend.model.EmailRequest;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;
@@ -24,20 +25,20 @@ public class EmailService {
     this.javaMailSender = javaMailSender;
   }
 
-  public void sendEmail(String toEmail, String movimiento, String base64Image) throws MessagingException, IOException {
+  public void sendEmail(EmailRequest emailRequest) throws MessagingException, IOException {
     MimeMessage mimeMessage = javaMailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
     helper.setFrom(fromEmail);
-    helper.setTo(toEmail);
+    helper.setTo(emailRequest.getToEmail());
     helper.setSubject("Movimiento detectado");
 
-    byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+    byte[] imageBytes = Base64.getDecoder().decode(emailRequest.getBase64());
 
     helper.addAttachment("img.jpg", new ByteArrayDataSource(imageBytes, "image/jpg"));
 
     helper.setText("<html><body>" +
-        "<p>Movimiento Detectado en: " + movimiento + "</p>" +
+        "<p>Movimiento Detectado en: " + emailRequest.getMovimiento() + "</p>" +
         "<img src='cid:img.jpg'>" +
         "</body></html>", true);
 
