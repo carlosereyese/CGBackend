@@ -52,21 +52,28 @@ public class VideoController implements VideoApi {
 
     InputStream videoStream = classPathResource.getInputStream();
 
+    CompletableFuture.runAsync(() -> {
+      try {
+        detectMotion(title);
+      } catch (IOException | MessagingException e) {
+        throw new RuntimeException(e);
+      }
+    });
+
+
+    System.out.println("Sending video.");
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-
-    try {
-      detectMotion(title, videoStream);
-    } catch (IOException | MessagingException e) {
-      throw new RuntimeException(e);
-    }
-
-    return new ResponseEntity<>(new InputStreamResource(videoStream), headers, HttpStatus.OK);
+    InputStreamResource inputStreamResource = new InputStreamResource(videoStream);
+    return new ResponseEntity<>(inputStreamResource, headers, HttpStatus.OK);
   }
 
 
-  public void detectMotion(String title, InputStream videoStream) throws IOException, MessagingException {
+  public void detectMotion(String title) throws IOException, MessagingException {
+    System.out.println("Detection started");
 
+    ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
+    InputStream videoStream = classPathResource.getInputStream();
     File tempVideoFile = File.createTempFile("tempVideo", ".mp4");
     try (OutputStream out = new FileOutputStream(tempVideoFile)) {
       IOUtils.copy(videoStream, out);
@@ -79,7 +86,6 @@ public class VideoController implements VideoApi {
     Mat diff_frame = null;
     Mat tempon_frame = null;
     ArrayList<Rect> array = new ArrayList<Rect>();
-    //VideoCapture camera = new VideoCapture("videos/" + title + ".mp4");
     Size sz = new Size(640, 480);
     int i = 0;
 
@@ -127,6 +133,7 @@ public class VideoController implements VideoApi {
     camera.release();
     tempVideoFile.delete();
     imag = null;
+    System.out.println("Detection ended.");
   }
 
   private ArrayList<Rect> detection_contours(Mat outmat) {
@@ -170,11 +177,13 @@ public class VideoController implements VideoApi {
     String formattedDateTime = currentDateTime.format(formatter);
     movements.setDateTime(formattedDateTime);
     backendService.insert(movements);
+    System.out.println("Movement inserted in bd.");
 
     EmailRequest email = new EmailRequest();
     email.setToEmail("carlosereyese@gmail.com");
-    email.setMovimiento("movimiento");
+    email.setMovimiento(movements.getRoom() + " a las: " + movements.getDateTime());
     email.setBase64(Base64.getEncoder().encodeToString(image));
-    emailService.sendEmail(email);
+    //emailService.sendEmail(email);
+    System.out.println("Email sent.");
   }
 }

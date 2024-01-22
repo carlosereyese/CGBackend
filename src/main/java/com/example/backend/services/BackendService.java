@@ -5,6 +5,7 @@ import com.example.backend.model.Spaces;
 import com.example.backend.repository.MovementsRepository;
 import com.example.backend.repository.SpacesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +20,8 @@ public class BackendService {
   SpacesRepository spacesRepository;
 
   public List<Movements> getAllMovements() {
-    return movementsRepository.findAll();
+    Sort sort = Sort.by(Sort.Direction.DESC, "id");
+    return movementsRepository.findAll(sort);
   }
 
   public Movements insert(Movements movement) { return movementsRepository.save(movement); }
