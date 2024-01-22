@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -42,6 +43,8 @@ public class VideoController implements VideoApi {
   @Autowired
   EmailService emailService;
 
+  private Mat imag;
+
   @Override
   public ResponseEntity<InputStreamResource> streamVideo(String title) throws IOException {
     ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
@@ -51,95 +54,112 @@ public class VideoController implements VideoApi {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
-
-    /*
-    CompletableFuture.runAsync(() -> {
-      try {
-        detectMotion(videoStream, title);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
-
-     */
+    try {
+      detectMotion(title, videoStream);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
     return new ResponseEntity<>(new InputStreamResource(videoStream), headers, HttpStatus.OK);
   }
 
-  private static final double MOTION_THRESHOLD = 1000.0;
-  // Motion detection method
-  public boolean detectMotion(InputStream videoStream, String title) throws IOException {
+
+  public void detectMotion(String title, InputStream videoStream) throws IOException {
+
     File tempVideoFile = File.createTempFile("tempVideo", ".mp4");
     try (OutputStream out = new FileOutputStream(tempVideoFile)) {
       IOUtils.copy(videoStream, out);
     }
 
-    Boolean motionResult = false;
-    VideoCapture videoCapture = new VideoCapture(tempVideoFile.getAbsolutePath());
-    Mat currentFrame = new Mat();
-    Mat previousFrame = new Mat();
-    Mat difference = new Mat();
-    Mat hierarchy = new Mat();
+    VideoCapture camera = new VideoCapture(tempVideoFile.getAbsolutePath());
 
-    if (videoCapture.isOpened()) {
-      videoCapture.read(previousFrame);
-      System.out.println("Detection starts.");
+    Mat frame = new Mat();
+    Mat outerBox = new Mat();
+    Mat diff_frame = null;
+    Mat tempon_frame = null;
+    ArrayList<Rect> array = new ArrayList<Rect>();
+    //VideoCapture camera = new VideoCapture("videos/" + title + ".mp4");
+    Size sz = new Size(640, 480);
+    int i = 0;
 
-      while (videoCapture.read(currentFrame)) {
-        // Calculate absolute difference between frames
-        Core.absdiff(previousFrame, currentFrame, difference);
+    boolean movementDetected = false;
+    while (camera.isOpened() && !movementDetected) {
+      if (camera.read(frame) ) {
+        Imgproc.resize(frame, frame, sz);
+        imag = frame.clone();
+        outerBox = new Mat(frame.size(), CvType.CV_8UC1);
+        Imgproc.cvtColor(frame, outerBox, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.GaussianBlur(outerBox, outerBox, new Size(3, 3), 0);
 
-        // Convert difference to grayscale
-        Imgproc.cvtColor(difference, difference, Imgproc.COLOR_BGR2GRAY);
+        if (i == 0) {
+          diff_frame = new Mat(outerBox.size(), CvType.CV_8UC1);
+          tempon_frame = new Mat(outerBox.size(), CvType.CV_8UC1);
+          diff_frame = outerBox.clone();
+        }
 
-        // Apply threshold to identify significant differences
-        Imgproc.threshold(difference, difference, 30, 255, Imgproc.THRESH_BINARY);
-
-        // Find contours in the binary image
-        List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(difference, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-
-        // Check for motion based on contour area
-        for (MatOfPoint contour : contours) {
-          double contourArea = Imgproc.contourArea(contour);
-          if (contourArea > 0.0) { System.out.println("Contour = " + contourArea); }
-          if (contourArea > MOTION_THRESHOLD) {
-            // Motion detected, set the flag and capture the frame
-            motionResult = true;
-            byte[] image = convertMatToByteArray(currentFrame);
-
-            instertMovementSendEmail(image, title);
-
+        if (i == 1) {
+          Core.subtract(outerBox, tempon_frame, diff_frame);
+          Imgproc.adaptiveThreshold(diff_frame, diff_frame, 255,
+              Imgproc.ADAPTIVE_THRESH_MEAN_C,
+              Imgproc.THRESH_BINARY_INV, 5, 2);
+          array = detection_contours(diff_frame);
+          if (array.size() > 0) {
+            instertMovementSendEmail(imag.clone(), title);
+            movementDetected = true;
+            Iterator<Rect> it2 = array.iterator();
+            while (it2.hasNext()) {
+              Rect obj = it2.next();
+              Imgproc.rectangle(imag, obj.br(), obj.tl(),
+                  new Scalar(0, 255, 0), 1);
+            }
             break;
           }
         }
 
-        // Update previous frame for the next iteration
-        currentFrame.copyTo(previousFrame);
-
-        if (motionResult) {
-          // Motion detected, no need to continue processing subsequent frames
-          break;
-        }
+        i = 1;
+        tempon_frame = outerBox.clone();
+      } else {
+        break;
       }
-
-      videoCapture.release();
     }
 
-    // Delete the temporary video file
+    camera.release();
     tempVideoFile.delete();
-
-    System.out.println("Detection finished.");
-    return motionResult;
+    imag = null;
   }
 
-  private byte[] convertMatToByteArray(Mat mat) {
+  private ArrayList<Rect> detection_contours(Mat outmat) {
+    Mat v = new Mat();
+    Mat vv = outmat.clone();
+    List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+    Imgproc.findContours(vv, contours, v, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+
+    double maxArea = 100;
+    int maxAreaIdx = -1;
+    Rect r = null;
+    ArrayList<Rect> rect_array = new ArrayList<Rect>();
+
+    for (int idx = 0; idx < contours.size(); idx++) {
+      Mat contour = contours.get(idx);
+      double contourarea = Imgproc.contourArea(contour);
+      if (contourarea > maxArea) {
+        maxAreaIdx = idx;
+        r = Imgproc.boundingRect(contours.get(maxAreaIdx));
+        rect_array.add(r);
+        Imgproc.drawContours(imag, contours, maxAreaIdx, new Scalar(0, 0, 255));
+      }
+    }
+
+    v.release();
+
+    return rect_array;
+  }
+
+  private void instertMovementSendEmail(Mat mat, String title) {
     MatOfByte matOfByte = new MatOfByte();
     Imgcodecs.imencode(".jpg", mat, matOfByte);
-    return matOfByte.toArray();
-  }
+    byte[] image = matOfByte.toArray();
 
-  private void instertMovementSendEmail(byte[] image, String title) {
     Movements movements = new Movements();
     movements.setRoom(title);
     movements.setId_user("1");

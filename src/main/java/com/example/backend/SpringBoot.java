@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SpringBoot {
 
   public static void main(String[] args) {
-    OpenCV.loadShared();
+    OpenCV.loadLocally();
     SpringApplication.run(SpringBoot.class, args);
   }
 
