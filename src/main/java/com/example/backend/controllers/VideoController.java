@@ -85,9 +85,11 @@ public class VideoController implements VideoApi {
     Size sz = new Size(640, 480);
     int i = 0;
 
+    System.out.println("Opening video.");
     boolean movementDetected = false;
     while (videoCapture.isOpened() && !movementDetected) {
       if (videoCapture.read(frame) ) {
+        System.out.println("Frame read.");
         Imgproc.resize(frame, frame, sz);
         imag = frame.clone();
         outerBox = new Mat(frame.size(), CvType.CV_8UC1);
