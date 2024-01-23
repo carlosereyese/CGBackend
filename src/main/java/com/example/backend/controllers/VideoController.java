@@ -78,8 +78,9 @@ public class VideoController implements VideoApi {
     try (OutputStream out = new FileOutputStream(tempVideoFile)) {
       IOUtils.copy(videoStream, out);
     }
+    System.out.println("Created temporary file.");
 
-    VideoCapture camera = new VideoCapture(tempVideoFile.getAbsolutePath());
+    VideoCapture videoCapture = new VideoCapture(tempVideoFile.getAbsolutePath());
 
     Mat frame = new Mat();
     Mat outerBox = new Mat();
@@ -90,8 +91,9 @@ public class VideoController implements VideoApi {
     int i = 0;
 
     boolean movementDetected = false;
-    while (camera.isOpened() && !movementDetected) {
-      if (camera.read(frame) ) {
+    System.out.println("Opening video capture.");
+    while (videoCapture.isOpened() && !movementDetected) {
+      if (videoCapture.read(frame) ) {
         Imgproc.resize(frame, frame, sz);
         imag = frame.clone();
         outerBox = new Mat(frame.size(), CvType.CV_8UC1);
@@ -112,6 +114,7 @@ public class VideoController implements VideoApi {
           array = detection_contours(diff_frame);
           if (array.size() > 0) {
             instertMovementSendEmail(imag.clone(), title);
+            System.out.println("Motion detected.");
             movementDetected = true;
             Iterator<Rect> it2 = array.iterator();
             while (it2.hasNext()) {
@@ -130,7 +133,7 @@ public class VideoController implements VideoApi {
       }
     }
 
-    camera.release();
+    videoCapture.release();
     tempVideoFile.delete();
     imag = null;
     System.out.println("Detection ended.");
