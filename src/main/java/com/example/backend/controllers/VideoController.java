@@ -73,14 +73,9 @@ public class VideoController implements VideoApi {
     System.out.println("Detection started");
 
     ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
-    InputStream videoStream = classPathResource.getInputStream();
-    File tempVideoFile = File.createTempFile("tempVideo", ".mp4");
-    try (OutputStream out = new FileOutputStream(tempVideoFile)) {
-      IOUtils.copy(videoStream, out);
-    }
-    System.out.println("Created temporary file.");
 
-    VideoCapture videoCapture = new VideoCapture(tempVideoFile.getAbsolutePath());
+    VideoCapture videoCapture = new VideoCapture();
+    videoCapture.open(classPathResource.getFile().getAbsolutePath());
 
     Mat frame = new Mat();
     Mat outerBox = new Mat();
@@ -91,7 +86,6 @@ public class VideoController implements VideoApi {
     int i = 0;
 
     boolean movementDetected = false;
-    System.out.println("Opening video capture.");
     while (videoCapture.isOpened() && !movementDetected) {
       if (videoCapture.read(frame) ) {
         Imgproc.resize(frame, frame, sz);
@@ -134,7 +128,6 @@ public class VideoController implements VideoApi {
     }
 
     videoCapture.release();
-    tempVideoFile.delete();
     imag = null;
     System.out.println("Detection ended.");
   }
