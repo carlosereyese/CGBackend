@@ -2,6 +2,10 @@ package com.example.backend.controllers;
 
 import com.example.backend.model.Chunk;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.videoio.VideoCapture;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -21,7 +25,6 @@ public class WebSocketController {
 
   private final SimpMessagingTemplate messagingTemplate;
   private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-  private static final int CHUNK_SIZE = 1024;
 
   public WebSocketController(SimpMessagingTemplate messagingTemplate) {
     this.messagingTemplate = messagingTemplate;
@@ -30,33 +33,38 @@ public class WebSocketController {
   @MessageMapping("/requestVideo/{roomId}")
   public void handleVideoRequest(@DestinationVariable String roomId) throws Exception {
     System.out.println("Requested room: " + roomId);
-
-    ClassPathResource classPathResource = new ClassPathResource("videos/" + roomId + ".mp4");
-
-    InputStream videoStream = classPathResource.getInputStream();
-
-    executorService.scheduleAtFixedRate(() -> {
-      try {
-        byte[] buffer = new byte[CHUNK_SIZE];
-        int bytesRead = videoStream.read(buffer);
-
-        if (bytesRead != -1) {
-          ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, bytesRead);
-          boolean isLastChunk = bytesRead < CHUNK_SIZE; // Check if it's the last chunk
-          sendChunk(byteBuffer, isLastChunk);
-        } else {
-          // End of video, close the connection or handle accordingly
-          System.out.println("Video sent.");
-          executorService.shutdown();
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }, 0, 1000, TimeUnit.MILLISECONDS);
+    extractFrames(roomId);
   }
 
-  private void sendChunk(ByteBuffer data, boolean lastChunk) {
-    Chunk chunk = new Chunk(true, data);
+  public void extractFrames(String title) throws IOException, InterruptedException {
+
+    ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
+
+    VideoCapture videoCapture = new VideoCapture();
+    videoCapture.open(classPathResource.getFile().getAbsolutePath());
+
+    if (!videoCapture.isOpened()) {
+      System.err.println("Error: Couldn't open video file.");
+      return;
+    }
+
+    byte[] image = null;
+    Mat frame = new Mat();
+    while (videoCapture.read(frame)) {
+      MatOfByte matOfByte = new MatOfByte();
+      Imgcodecs.imencode(".jpg", frame, matOfByte);
+      image = matOfByte.toArray();
+      sendFrame(image, false);
+    }
+
+    sendFrame(image, true);
+
+    videoCapture.release();
+  }
+
+  private void sendFrame(byte[] frame, boolean lastFrame) throws InterruptedException {
+    Chunk chunk = new Chunk(lastFrame, frame);
+    Thread.sleep(1/30);
     messagingTemplate.convertAndSend("/topic/getVideo", chunk); // Send the Chunk object
   }
 

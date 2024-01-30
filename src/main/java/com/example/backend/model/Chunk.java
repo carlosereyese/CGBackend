@@ -11,6 +11,6 @@ import java.nio.ByteBuffer;
 public class Chunk {
 
   private boolean lastChunk;
-  private ByteBuffer data;
+  private byte[] data;
 
 }
