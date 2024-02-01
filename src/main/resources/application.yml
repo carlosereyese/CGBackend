@@ -1,9 +1,9 @@
 # Database Configuration
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/cameraguard
-    username: root
-    password: root
+    url: jdbc:mysql://kwefz2gf50vislgn:mlomx5egvv93tun0@r6ze0q02l4me77k3.chr7pe7iynqr.eu-west-1.rds.amazonaws.com:3306/xjztkrppu2znofkx
+    username: kwefz2gf50vislgn
+    password: mlomx5egvv93tun0
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # Hibernate Configuration
