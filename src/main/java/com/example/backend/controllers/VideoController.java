@@ -5,10 +5,8 @@ import com.example.backend.model.EmailRequest;
 import com.example.backend.model.Movements;
 import com.example.backend.services.BackendService;
 import com.example.backend.services.EmailService;
-import com.example.backend.services.StreamingService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.mail.MessagingException;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.opencv.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -35,9 +33,6 @@ import org.opencv.videoio.VideoCapture;
 @RestController
 @SecurityRequirement(name = "authenticate")
 public class VideoController implements VideoApi {
-
-  @Autowired
-  private StreamingService service;
   @Autowired
   BackendService backendService;
 
