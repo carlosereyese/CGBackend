@@ -118,6 +118,9 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
+                                    <directory>target/dependency/*.jar</directory>
+                                </fileset>
+                                <fileset>
                                     <directory>node_modules</directory>
                                 </fileset>
                                 <fileset>
