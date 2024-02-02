@@ -17,13 +17,16 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 @Controller
 @SecurityRequirement(name = "authenticate")
@@ -51,8 +54,14 @@ public class WebSocketController {
 
     ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
 
+    InputStream inputStream = classPathResource.getInputStream();
+    // Copy the content of InputStream to a temporary file
+    File tempFile = Files.createTempFile("temp-video", ".mp4").toFile();
+    Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    // Create VideoCapture using the temporary file
     VideoCapture videoCapture = new VideoCapture();
-    videoCapture.open(classPathResource.getFile().getAbsolutePath());
+    videoCapture.open(tempFile.getAbsolutePath());
 
     if (!videoCapture.isOpened()) {
       System.err.println("Error: Couldn't open video file.");
@@ -71,6 +80,7 @@ public class WebSocketController {
     sendFrame(image, true);
 
     videoCapture.release();
+    tempFile.delete();
   }
 
   private void sendFrame(byte[] frame, boolean lastFrame) throws InterruptedException {
