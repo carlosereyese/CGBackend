@@ -61,6 +61,7 @@ public class WebSocketController {
 
     // Create VideoCapture using the temporary file
     VideoCapture videoCapture = new VideoCapture();
+    System.out.println("Absolute path is: " + tempFile.getAbsolutePath());
     videoCapture.open(tempFile.getAbsolutePath());
 
     if (!videoCapture.isOpened()) {
