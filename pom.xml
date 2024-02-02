@@ -118,12 +118,6 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>target</directory>
-                                    <excludes>
-                                        <exclude>*.war</exclude>
-                                    </excludes>
-                                </fileset>
-                                <fileset>
                                     <directory>node_modules</directory>
                                 </fileset>
                                 <fileset>
