@@ -41,18 +41,23 @@ public class WebSocketController {
     this.messagingTemplate = messagingTemplate;
   }
 
+  //Mediante este servicio se recibe la solicitud de video del cliente
   @MessageMapping("/requestVideo/{roomId}")
   public void handleVideoRequest(@DestinationVariable String roomId) throws Exception {
     System.out.println("Requested room: " + roomId);
     extractFrames(roomId);
   }
 
+  /*
+  Este metodo itera a traves de todos los fotogramas del video solicitado para realizar una deteccion de movimiento
+  y para aenviar los fotogramas uno a uno.
+   */
   public void extractFrames(String title) throws IOException, InterruptedException {
 
     ClassPathResource classPathResource = new ClassPathResource("videos/" + title + ".mp4");
 
     VideoCapture videoCapture = new VideoCapture();
-    videoCapture.open(classPathResource.getFile().getAbsolutePath());
+    videoCapture.open(classPathResource.getFile().getAbsolutePath()); //Abrir video
 
     if (!videoCapture.isOpened()) {
       System.err.println("Error: Couldn't open video file.");
@@ -69,24 +74,24 @@ public class WebSocketController {
     boolean firstFrame = true;
     boolean movementDetected = false;
 
-    while (videoCapture.read(frame)) {
+    while (videoCapture.read(frame)) { //Iterar fotogramas
 
       MatOfByte matOfByte = new MatOfByte();
 
       Imgproc.resize(frame, frame, sz);
       imag = frame.clone();
       currentFrame = new Mat(frame.size(), CvType.CV_8UC1);
-      Imgproc.cvtColor(frame, currentFrame, Imgproc.COLOR_BGR2GRAY);
-      Imgproc.GaussianBlur(currentFrame, currentFrame, new Size(3, 3), 0);
+      Imgproc.cvtColor(frame, currentFrame, Imgproc.COLOR_BGR2GRAY); //Se convierte a una escala de grises
+      Imgproc.GaussianBlur(currentFrame, currentFrame, new Size(3, 3), 0); //Se le aplica un desenfoque gaussiano
 
       if (!firstFrame) {
-        Core.subtract(currentFrame, previousFrame, diffFrames);
+        Core.subtract(currentFrame, previousFrame, diffFrames); //Se resten el fotograma actual y anterior
         Imgproc.adaptiveThreshold(diffFrames, diffFrames, 255,
             Imgproc.ADAPTIVE_THRESH_MEAN_C,
-            Imgproc.THRESH_BINARY_INV, 5, 2);
+            Imgproc.THRESH_BINARY_INV, 5, 2); //Se le aplica umbral adaptativo
         array = detection_contours(diffFrames);
-        if (array.size() > 0 && !movementDetected) {
-          Imgcodecs.imencode(".jpg", imag, matOfByte);
+        if (array.size() > 0 && !movementDetected) {        //Se utliza la flag movementDetected para reducir la cantidad de
+          Imgcodecs.imencode(".jpg", imag, matOfByte); //movimientos insertados y correos enviados en el entorno de pruebas
           byte[] finalImageByteArray = matOfByte.toArray();
           CompletableFuture.runAsync(() -> {
             instertMovementSendEmail(finalImageByteArray, title);
@@ -118,6 +123,10 @@ public class WebSocketController {
     messagingTemplate.convertAndSend("/topic/getVideo", chunk); // Send the Chunk object
   }
 
+  /*
+  Esta funcion devuelve un listado de contornos de los movimientos detectados, tambien dibuja una
+  silueta roja al rededor de los movimientos para poder observarlo mejor.
+   */
   private ArrayList<Rect> detection_contours(Mat diffFrames) {
     Mat mat1 = new Mat();
     Mat mat2 = diffFrames.clone();
@@ -145,6 +154,9 @@ public class WebSocketController {
     return rect_array;
   }
 
+  /*
+  Este metodo inserta un movimiento en la tabla y envia un correo electronico para alertar al usuario
+   */
   private void instertMovementSendEmail(byte[] image, String title) {
     LocalDateTime currentDateTime = LocalDateTime.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
