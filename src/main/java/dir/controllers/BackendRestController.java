@@ -3,6 +3,7 @@ package dir.controllers;
 import dir.api.BackendRestApi;
 import dir.model.Movements;
 import dir.model.Spaces;
+import dir.services.AuthService;
 import dir.services.BackendService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,9 @@ public class BackendRestController implements BackendRestApi {
   }
 
   @Override
-  public Movements insertMovement(Movements movement) { return backendService.insert(movement); }
+  public Movements insertMovement(Movements movement) {
+    return backendService.insert(movement);
+  }
 
   @Override
   public List<Spaces> getAllSpaces() {
@@ -31,6 +34,11 @@ public class BackendRestController implements BackendRestApi {
   }
 
   @Override
-  public Spaces insertSpaces(Spaces space) { return backendService.insert(space); }
+  public Spaces insertSpaces(Spaces space) {
+    return backendService.insert(space);
+  }
+
+  @Override
+  public Boolean toggleAlarm(){ return backendService.toggleAlarm(); }
 
 }

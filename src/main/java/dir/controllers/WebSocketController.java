@@ -153,7 +153,7 @@ public class WebSocketController {
     try {
       Movements movements = new Movements();
       movements.setRoom(title);
-      movements.setId_user("1");
+      movements.setUserId("1");
       movements.setImage(image);
       movements.setDateTime(formattedDateTime);
       backendService.insert(movements);

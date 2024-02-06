@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface MovementsRepository extends JpaRepository<Movements, Integer> {
 
-  List<Movements> findAll(Sort sort);
+  List<Movements> findAllByUserId(String id, Sort sort);
 
 }

@@ -20,4 +20,7 @@ public interface BackendRestApi {
 
   @PostMapping(path="/spaces/insertSpaces")
   Spaces insertSpaces(Spaces space);
+
+  @PostMapping(path = "/alarm/toggleAlarm")
+  Boolean toggleAlarm();
 }

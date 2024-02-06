@@ -19,15 +19,28 @@ public class BackendService {
   @Autowired
   SpacesRepository spacesRepository;
 
+  @Autowired
+  AuthService authService;
+
   public List<Movements> getAllMovements() {
     Sort sort = Sort.by(Sort.Direction.DESC, "id");
-    return movementsRepository.findAll(sort);
+    return movementsRepository.findAllByUserId(authService.getUserId(), sort);
   }
 
-  public Movements insert(Movements movement) { return movementsRepository.save(movement); }
+  public Movements insert(Movements movement) {
+    movement.setUserId(authService.getUserId());
+    return movementsRepository.save(movement);
+  }
 
-  public List<Spaces> getAllSpaces() { return spacesRepository.findAll(); }
+  public List<Spaces> getAllSpaces() {
+    return spacesRepository.findAllByUserId(authService.getUserId());
+  }
 
-  public Spaces insert(Spaces space) { return spacesRepository.save(space); }
+  public Spaces insert(Spaces space) {
+    space.setUserId(authService.getUserId());
+    return spacesRepository.save(space);
+  }
+
+  public boolean toggleAlarm() { return true; }
 
 }

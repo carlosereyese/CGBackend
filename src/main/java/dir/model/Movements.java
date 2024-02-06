@@ -18,7 +18,8 @@ public class Movements {
   private Integer id;
   private String dateTime;
   private String room;
-  private String id_user;
+  @Column(name = "ID_USER")
+  private String userId;
   @Lob
   @Column(columnDefinition = "MEDIUMBLOB")
   private byte[] image;
