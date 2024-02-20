@@ -119,7 +119,7 @@ public class WebSocketController {
 
   private void sendFrame(byte[] frame, boolean lastFrame) throws InterruptedException {
     Chunk chunk = new Chunk(lastFrame, frame);
-    Thread.sleep(1/30);
+    Thread.sleep(10);
     messagingTemplate.convertAndSend("/topic/getVideo", chunk); // Send the Chunk object
   }
 
